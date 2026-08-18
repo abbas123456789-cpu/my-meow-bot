@@ -17,7 +17,7 @@ if not api_id or not api_hash or not phone or not chat_id:
     print("خطا: متغیرهای محیطی تنظیم نشده‌اند.")
     exit(1)
 
-# ساخت کلاینت تلگرام
+# ساخت کلاینت تلگرام (مطمئن می‌شویم در یک حلقه درست اجرا شود)
 client = TelegramClient('session_mew', api_id, api_hash)
 
 async def send_mew():
@@ -42,10 +42,17 @@ app = Flask(__name__)
 def home():
     return "ربات تلگرام در حال کار است!"
 
+def start_bot():
+    # ساختن یک حلقه asyncio جدید برای ترد ربات
+    asyncio.set_event_loop(asyncio.new_event_loop())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+
 if __name__ == '__main__':
-    # راه‌اندازی سرور وب
+    # اجرای ربات در یک ترد جداگانه با حلقه مخصوص به خود
+    bot_thread = threading.Thread(target=start_bot, daemon=True)
+    bot_thread.start()
+
+    # اجرای سرور وب در ترد اصلی (برای جلوگیری از خطای پورت تکراری)
     port = int(os.environ.get('PORT', 10000))
-    threading.Thread(target=lambda: app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False), daemon=True).start()
-    
-    # اجرای ربات اصلی
-    asyncio.run(main())
+    app.run(host='0.0.0.0', port=port, debug=False)
