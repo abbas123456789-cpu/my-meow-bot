@@ -1,56 +1,74 @@
 import asyncio
 import os
 from telethon import TelegramClient
-from flask import Flask
-import threading
 
-# دریافت متغیرهای محیطی از تنظیمات Render
+# ============================================
+# اطلاعات از متغیرهای محیطی
+# ============================================
 API_ID = int(os.environ.get('API_ID', 0))
 API_HASH = os.environ.get('API_HASH', '')
 PHONE_NUMBER = os.environ.get('PHONE_NUMBER', '')
 CHAT_ID = int(os.environ.get('CHAT_ID', 0))
+
 INTERVAL_SECONDS = 286
 
-# بررسی اینکه متغیرها پر شده‌اند یا خیر
+# ============================================
+# بررسی وجود اطلاعات
+# ============================================
 if not API_ID or not API_HASH or not PHONE_NUMBER or not CHAT_ID:
-    print("خطا: متغیرهای محیطی تنظیم نشده‌اند.")
+    print('❌ خطا: متغیرهای محیطی تنظیم نشده‌اند!')
+    print('لطفاً متغیرهای زیر را تنظیم کنید:')
+    print('  - API_ID')
+    print('  - API_HASH')
+    print('  - PHONE_NUMBER')
+    print('  - CHAT_ID')
     exit(1)
 
-# تنظیم سرور وب برای اینکه Render خاموش نشود
-app = Flask(__name__)
-@app.route('/')
-def home():
-    return "ربات در حال کار است!"
-
-# ساخت کلاینت (به فایل session_mew.session نیاز دارد)
-client = TelegramClient('session_mew', API_ID, API_HASH)
-
-async def send_mew():
+# ============================================
+# تابع ارسال پیام
+# ============================================
+async def send_meow():
+    """ارسال کلمه 'میو' به گروه مورد نظر"""
+    client = TelegramClient('session_meow', API_ID, API_HASH)
+    
     try:
-        await client.send_message(CHAT_ID, "میو")
-        print("پیام 'میو' ارسال شد.")
+        await client.start(phone=PHONE_NUMBER)
+        print('✅ اتصال به تلگرام برقرار شد')
+        await client.send_message(CHAT_ID, 'میو')
+        print('✅ پیام "میو" با موفقیت ارسال شد')
+        return True
     except Exception as e:
-        print(f"خطا در ارسال پیام: {e}")
+        print(f'❌ خطا در ارسال: {e}')
+        return False
+    finally:
+        await client.disconnect()
+        print('🔌 اتصال قطع شد')
 
-async def bot_loop():
-    try:
-        # سعی می‌کنیم لاگین کنیم
-        await client.start(PHONE_NUMBER)
-        print("ربات با موفقیت به تلگرام متصل شد و پیام‌ها را ارسال می‌کند!")
-        while True:
-            await send_mew()
-            await asyncio.sleep(INTERVAL_SECONDS)
-    except Exception as e:
-        print(f"خطای بحرانی ربات: {e}")
-        await asyncio.sleep(60)
+# ============================================
+# تابع اصلی
+# ============================================
+async def main():
+    print('🚀 ربات شروع به کار کرد.')
+    print(f'⏱️ هر {INTERVAL_SECONDS // 60} دقیقه و {INTERVAL_SECONDS % 60} ثانیه یکبار "میو" ارسال می‌شود.')
+    print('-' * 50)
+    
+    while True:
+        try:
+            await send_meow()
+        except Exception as e:
+            print(f'❌ خطای اصلی: {e}')
+        await asyncio.sleep(INTERVAL_SECONDS)
 
-def run_async():
-    asyncio.run(bot_loop())
-
+# ============================================
+# اجرا با مدیریت صحیح event loop
+# ============================================
 if __name__ == '__main__':
-    # اجرای ربات در یک ترد جداگانه
-    bot_thread = threading.Thread(target=run_async, daemon=True)
-    bot_thread.start()
-    # اجرای سرور وب
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    try:
+        # ایجاد یک event loop جدید و اجرا
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print('\n🛑 ربات متوقف شد.')
+    finally:
+        loop.close()
