@@ -1,10 +1,10 @@
 import asyncio
 import os
 from telethon import TelegramClient
-from flask import Flask  # اضافه کردن کتابخانه برای سرور
+from flask import Flask
 import threading
 
-# متغیرهای محیطی
+# دریافت متغیرهای محیطی
 api_id = int(os.environ.get('API_ID', 0))
 api_hash = os.environ.get('API_HASH', '')
 phone = os.environ.get('PHONE_NUMBER', '')
@@ -17,17 +17,17 @@ if not api_id or not api_hash or not phone or not chat_id:
     print("خطا: متغیرهای محیطی تنظیم نشده‌اند.")
     exit(1)
 
+# ساخت کلاینت تلگرام
+client = TelegramClient('session_mew', api_id, api_hash)
+
 async def send_mew():
-    client = TelegramClient('session_mew', api_id, api_hash)
     try:
         await client.start(phone)
-        print("ربات وارد شد.")
+        print("ربات متصل شد و در حال ارسال پیام است...")
         await client.send_message(chat_id, "میو")
         print("پیام 'میو' ارسال شد.")
     except Exception as e:
-        print(f"خطا رخ داد: {e}")
-    finally:
-        await client.disconnect()
+        print(f"خطا در ارسال پیام: {e}")
 
 async def main():
     print("ربات شروع به کار کرد.")
@@ -35,20 +35,17 @@ async def main():
         await send_mew()
         await asyncio.sleep(INTERVAL_SECONDS)
 
-# --- کد جدید برای رندر (باز کردن پورت) ---
+# تنظیم سرور وب (فقط برای راضی کردن Render)
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "ربات در حال اجراست!"
+    return "ربات تلگرام در حال کار است!"
 
-def run_web_server():
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
 if __name__ == '__main__':
-    # اگر توسط گانیکورن (Gunicorn) اجرا نشده باشد، سرور وب را روشن کن
-    if os.environ.get('GUNICORN') != 'true': 
-        threading.Thread(target=run_web_server, daemon=True).start()
+    # راه‌اندازی سرور وب
+    port = int(os.environ.get('PORT', 10000))
+    threading.Thread(target=lambda: app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False), daemon=True).start()
     
     # اجرای ربات اصلی
     asyncio.run(main())
