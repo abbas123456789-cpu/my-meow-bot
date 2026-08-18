@@ -9,7 +9,7 @@ API_ID = int(os.environ.get('API_ID', 0))
 API_HASH = os.environ.get('API_HASH', '')
 PHONE_NUMBER = os.environ.get('PHONE_NUMBER', '')
 CHAT_ID = int(os.environ.get('CHAT_ID', 0))
-INTERVAL_SECONDS = 280
+INTERVAL_SECONDS = 286
 
 # بررسی وجود متغیرها
 if not API_ID or not API_HASH or not PHONE_NUMBER or not CHAT_ID:
