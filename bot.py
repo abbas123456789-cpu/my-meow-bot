@@ -45,9 +45,10 @@ def home():
 def run_web_server():
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
-
 if __name__ == '__main__':
-    # اجرای سرور وب در یک ترد جداگانه تا ربات متوقف نشود
-    threading.Thread(target=run_web_server, daemon=True).start()
+    # اگر توسط گانیکورن (Gunicorn) اجرا نشده باشد، سرور وب را روشن کن
+    if os.environ.get('GUNICORN') != 'true': 
+        threading.Thread(target=run_web_server, daemon=True).start()
+    
     # اجرای ربات اصلی
     asyncio.run(main())
