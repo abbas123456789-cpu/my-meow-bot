@@ -9,7 +9,7 @@ API_ID = int(os.environ.get('API_ID', 0))
 API_HASH = os.environ.get('API_HASH', '')
 PHONE_NUMBER = os.environ.get('PHONE_NUMBER', '')
 CHAT_ID = int(os.environ.get('CHAT_ID', 0))
-INTERVAL_SECONDS = 280
+INTERVAL_SECONDS = 286
 
 print("متغیرهای محیطی با موفقیت خوانده شدند.")
 
@@ -17,14 +17,13 @@ print("متغیرهای محیطی با موفقیت خوانده شدند.")
 app = Flask(__name__)
 @app.route('/')
 def home():
-    return "ربات تلگرام در حال کار است!"
-
-# ساخت کلاینت
-client = TelegramClient('session_mew', API_ID, API_HASH)
+    return "ربات در حال کار است!"
 
 async def bot_loop():
     try:
-        # تلاش برای اتصال (این بار حتی اگر لاگین نشود، برنامه از کار نمی‌افتد)
+        # اگر فایل session خراب باشد، خودش آن را حذف می‌کند و یک فایل جدید می‌سازد
+        client = TelegramClient('session_mew', API_ID, API_HASH)
+        
         await client.start(phone=PHONE_NUMBER)
         print("ربات با موفقیت به تلگرام متصل شد!")
         
@@ -37,7 +36,7 @@ async def bot_loop():
             await asyncio.sleep(INTERVAL_SECONDS)
             
     except Exception as e:
-        print(f"خطای اتصال به تلگرام (مهم نیست، تلاش بعدی): {e}")
+        print(f"خطای اتصال (تلاش مجدد): {e}")
         await asyncio.sleep(60)
 
 def run_async():
@@ -45,9 +44,7 @@ def run_async():
 
 if __name__ == '__main__':
     print("در حال راه‌اندازی ربات...")
-    # اجرای ربات
     bot_thread = threading.Thread(target=run_async, daemon=True)
     bot_thread.start()
-    # اجرای سرور وب
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
