@@ -8,10 +8,10 @@ API_ID = int(os.environ.get('API_ID', 0))
 API_HASH = os.environ.get('API_HASH', '')
 PHONE_NUMBER = os.environ.get('PHONE_NUMBER', '')
 CHAT_ID = int(os.environ.get('CHAT_ID', 0))
-INTERVAL_SECONDS = 283
+INTERVAL_SECONDS = 280
 
 print("✅ متغیرهای محیطی خوانده شدند.")
-print("⏳ در حال راه‌اندازی سرور و ربات...")
+print("⏳ در حال راه‌اندازی...")
 
 app = Flask(__name__)
 @app.route('/')
@@ -25,34 +25,23 @@ async def bot_loop():
             await client.connect()
             
             if not await client.is_user_authorized():
-                print("📱 تلگرام از ما کد تایید خواست! در حال ارسال درخواست...")
+                print("📱 در حال ارسال درخواست کد تایید به شماره شما...")
                 await client.send_code_request(PHONE_NUMBER)
-                print("⏳ کد به گوشی شما ارسال شد. اما چون شما در Render هستید، منتظر کد نمی‌مانیم!")
-                print("🔄 ۶۰ ثانیه صبر می‌کنیم و دوباره تلاش می‌کنیم تا خودش لاگین شود...")
+                print("✅ درخواست کد ارسال شد. کد باید به پیامک شما بیاید.")
+                print("⏳ منتظر می‌مانیم تا آن کد را در Render وارد کنید...")
                 await client.disconnect()
                 await asyncio.sleep(60)
                 continue
 
-            print("✅ ربات با موفقیت به تلگرام متصل شد! (فایل نشست ساخته شد)")
-            
-            # حلقه ارسال پیام
+            print("✅ ربات به تلگرام متصل شد!")
             while True:
-                try:
-                    await client.send_message(CHAT_ID, "میو")
-                    print("📨 پیام 'میو' ارسال شد.")
-                except Exception as e:
-                    print(f"❌ خطا در ارسال: {e}")
+                await client.send_message(CHAT_ID, "میو")
+                print("📨 'میو' ارسال شد.")
                 await asyncio.sleep(INTERVAL_SECONDS)
-                
         except Exception as e:
-            print(f"❌ خطای کلی (تلاش مجدد در ۶۰ ثانیه): {e}")
+            print(f"❌ خطا: {e}")
             await asyncio.sleep(60)
 
-def run_async():
-    asyncio.run(bot_loop())
-
-if __name__ == '__main__':
-    print("🚀 ربات در حال اجرا است...")
-    threading.Thread(target=run_async, daemon=True).start()
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+threading.Thread(target=lambda: asyncio.run(bot_loop()), daemon=True).start()
+port = int(os.environ.get('PORT', 10000))
+app.run(host='0.0.0.0', port=port, debug=False)
