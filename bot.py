@@ -1,96 +1,53 @@
 import asyncio
 import os
-import sys
 from telethon import TelegramClient
+from flask import Flask
+import threading
 
-# ============================================
-# اطلاعات از متغیرهای محیطی
-# ============================================
+# دریافت متغیرهای محیطی
 API_ID = int(os.environ.get('API_ID', 0))
 API_HASH = os.environ.get('API_HASH', '')
 PHONE_NUMBER = os.environ.get('PHONE_NUMBER', '')
 CHAT_ID = int(os.environ.get('CHAT_ID', 0))
+INTERVAL_SECONDS = 280
 
-INTERVAL_SECONDS = 285  # ۴ دقیقه و ۴۵ ثانیه = ۲۸۵ ثانیه
+print("متغیرهای محیطی با موفقیت خوانده شدند.")
 
-# ============================================
-# تابع چاپ با خروجی فوری
-# ============================================
-def print_flush(msg):
-    """چاپ پیام با خروجی فوری"""
-    print(msg)
-    sys.stdout.flush()  #强制 خروجی فوری
+# تنظیم سرور وب
+app = Flask(__name__)
+@app.route('/')
+def home():
+    return "ربات تلگرام در حال کار است!"
 
-# ============================================
-# بررسی وجود اطلاعات
-# ============================================
-if not API_ID or not API_HASH or not PHONE_NUMBER or not CHAT_ID:
-    print_flush('❌ خطا: متغیرهای محیطی تنظیم نشده‌اند!')
-    print_flush('لطفاً متغیرهای زیر را تنظیم کنید:')
-    print_flush('  - API_ID')
-    print_flush('  - API_HASH')
-    print_flush('  - PHONE_NUMBER')
-    print_flush('  - CHAT_ID')
-    exit(1)
+# ساخت کلاینت
+client = TelegramClient('session_mew', API_ID, API_HASH)
 
-print_flush('✅ متغیرهای محیطی با موفقیت خوانده شدند')
-
-# ============================================
-# تابع ارسال پیام
-# ============================================
-async def send_meow():
-    """ارسال کلمه 'میو' به گروه مورد نظر"""
-    print_flush('🔄 در حال اتصال به تلگرام...')
-    client = TelegramClient('session_meow', API_ID, API_HASH)
-    
+async def bot_loop():
     try:
+        # تلاش برای اتصال (این بار حتی اگر لاگین نشود، برنامه از کار نمی‌افتد)
         await client.start(phone=PHONE_NUMBER)
-        print_flush('✅ اتصال به تلگرام برقرار شد')
+        print("ربات با موفقیت به تلگرام متصل شد!")
         
-        await client.send_message(CHAT_ID, 'میو')
-        print_flush('✅ پیام "میو" با موفقیت ارسال شد')
-        return True
-        
+        while True:
+            try:
+                await client.send_message(CHAT_ID, "میو")
+                print("پیام 'میو' ارسال شد.")
+            except Exception as e:
+                print(f"خطا در ارسال پیام: {e}")
+            await asyncio.sleep(INTERVAL_SECONDS)
+            
     except Exception as e:
-        print_flush(f'❌ خطا در ارسال: {e}')
-        return False
-    finally:
-        await client.disconnect()
-        print_flush('🔌 اتصال قطع شد')
+        print(f"خطای اتصال به تلگرام (مهم نیست، تلاش بعدی): {e}")
+        await asyncio.sleep(60)
 
-# ============================================
-# تابع اصلی
-# ============================================
-async def main():
-    print_flush('🚀 ربات شروع به کار کرد.')
-    print_flush(f'⏱️ هر {INTERVAL_SECONDS // 60} دقیقه و {INTERVAL_SECONDS % 60} ثانیه یکبار "میو" ارسال می‌شود.')
-    print_flush('-' * 50)
-    
-    counter = 0
-    while True:
-        counter += 1
-        print_flush(f'📤 ارسال شماره {counter}...')
-        try:
-            await send_meow()
-        except Exception as e:
-            print_flush(f'❌ خطای اصلی: {e}')
-        print_flush(f'⏳ منتظر {INTERVAL_SECONDS} ثانیه تا ارسال بعدی...')
-        await asyncio.sleep(INTERVAL_SECONDS)
+def run_async():
+    asyncio.run(bot_loop())
 
-# ============================================
-# اجرا با مدیریت صحیح event loop
-# ============================================
 if __name__ == '__main__':
-    try:
-        print_flush('🔄 راه‌اندازی event loop...')
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(main())
-    except KeyboardInterrupt:
-        print_flush('\n🛑 ربات متوقف شد.')
-    except Exception as e:
-        print_flush(f'❌ خطای غیرمنتظره: {e}')
-    finally:
-        if 'loop' in locals():
-            loop.close()
-            print_flush('✅ Event loop بسته شد')
+    print("در حال راه‌اندازی ربات...")
+    # اجرای ربات
+    bot_thread = threading.Thread(target=run_async, daemon=True)
+    bot_thread.start()
+    # اجرای سرور وب
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
