@@ -1,0 +1,14 @@
+import asyncio
+from telethon import TelegramClient
+
+# اطلاعات اکانت خود را اینجا وارد کنید
+API_ID = 1234567  # عدد API_ID خود را اینجا بگذارید
+API_HASH = 'your_api_hash_here' # هش خود را اینجا بگذارید
+PHONE = '09123456789' # شماره موبایل خود را با ۰۹۱... اینجا بگذارید
+
+async def main():
+    client = TelegramClient('session_mew', API_ID, API_HASH)
+    await client.start(PHONE)
+    print("✅ لاگین با موفقیت انجام شد! برنامه را ببندید.")
+
+asyncio.run(main())
